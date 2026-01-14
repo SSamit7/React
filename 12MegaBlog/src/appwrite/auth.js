@@ -1,5 +1,6 @@
-import conf from '../conf'
+import conf from '../conf/conf';
 import { Client, Account, ID } from "appwrite";
+
 
 
 export class AuthService {
@@ -16,7 +17,7 @@ constructor () {
 async createAccount({email,password , name })
 {
     try {
-       const UserAccount = await this.account.account.create({
+       const UserAccount = await this.account.create({
   userId: ID.unique(),
   email,
   password,
@@ -39,7 +40,7 @@ async createAccount({email,password , name })
  async login ({email, password})
  {
     try {
-       return  await this.account.createEmailPasswordSession()(email,password);
+       return  await this.account.createSession(email,password);
     } catch (error) {
         throw error ;
     }
@@ -50,9 +51,13 @@ async createAccount({email,password , name })
     try {
          return await this.account.get()
     } catch (error) {
-        console.log("appwrite Serice Has Error  :: getCurrentUser :: error",error);
-        throw error;
-        
+        // ✅ 401 is NORMAL for guests - don't throw, just return null
+        if (error.code === 401 || error.type === 'general_unauthorized_scope') {
+            console.log("👤 No user logged in (guest mode)");
+            return null; // ✅ Return null instead of throwing
+        }
+        console.log("❌ Appwrite Service :: getCurrentUser :: error", error);
+        throw error; // Only throw for other errors
     }
     return null;
  }
